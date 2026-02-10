@@ -1,0 +1,51 @@
+import streamlit as st
+import pandas as pd
+
+st.set_page_config(page_title="Mi Agenda de Visitas", layout="wide")
+
+# Título y estado
+st.title("🏥 Semáforo de Visitas HCP")
+st.info("Instrucciones: Asigna un día (L, M, X, J, V) a los vacíos y tilda cuando completes la visita.")
+
+# Datos de tu lista (Carga inicial)
+if 'data' not in st.session_state:
+    st.session_state.data = [
+        {"Profesional": "AMOROSI, GABRIEL JOSE", "Especialidad": "CARDIOLOGIA", "Dia": "L", "Visto": False},
+        {"Profesional": "FAVA, GUSTAVO MARTIN", "Especialidad": "CARDIOLOGIA", "Dia": "M", "Visto": False},
+        {"Profesional": "CARETTA SAEZ, MARCOS", "Especialidad": "MEDICINA GENERAL", "Dia": "X", "Visto": False},
+        {"Profesional": "SANCHEZ, MARCELO", "Especialidad": "ENF. INFECCIOSAS", "Dia": "J", "Visto": False},
+        {"Profesional": "VICTORIA, VERONICA", "Especialidad": "MEDICINA FAMILIAR", "Dia": "V", "Visto": False},
+        {"Profesional": "SEGOVIA, DIEGO", "Especialidad": "CARDIOLOGIA", "Dia": "", "Visto": False},
+        {"Profesional": "ZURITA, MARCELA", "Especialidad": "MEDICINA GENERAL", "Dia": "", "Visto": False},
+        {"Profesional": "GARCIA, SERGIO", "Especialidad": "CARDIOLOGIA", "Dia": "L", "Visto": False},
+        # Se pueden seguir agregando todos los de la lista aquí
+    ]
+
+df = pd.DataFrame(st.session_state.data)
+
+# Ordenar por día (L, M, X, J, V)
+orden_dias = {"L": 1, "M": 2, "X": 3, "J": 4, "V": 5, "": 6}
+df['orden'] = df['Dia'].map(orden_dias)
+df = df.sort_values(by=['orden', 'Profesional'])
+
+# Aplicación de colores mediante estilos
+def color_visto(row):
+    return ['background-color: #d4edda' if row.Visto else '' for _ in row]
+
+# Editor dinámico
+edited_df = st.data_editor(
+    df.drop(columns=['orden']),
+    column_config={
+        "Visto": st.column_config.CheckboxColumn("¿Visto?", default=False),
+        "Dia": st.column_config.SelectboxColumn("Día", options=["L", "M", "X", "J", "V", ""], required=False),
+    },
+    hide_index=True,
+    use_container_width=True,
+    key="editor_principal"
+)
+
+# Guardar cambios
+st.session_state.data = edited_df.to_dict('records')
+
+if st.button("Limpiar filtros o Reiniciar orden"):
+    st.rerun()
